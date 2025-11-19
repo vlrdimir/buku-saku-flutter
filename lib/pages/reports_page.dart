@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
+import '../services/api_wrapper.dart';
+import '../services/reports_service.dart';
+import 'category_details_page.dart';
 
 class ReportsPage extends StatefulWidget {
   const ReportsPage({super.key});
@@ -9,8 +13,14 @@ class ReportsPage extends StatefulWidget {
 }
 
 class _ReportsPageState extends State<ReportsPage> {
+  final ApiWrapper _api = ApiWrapper();
+  
   String _selectedPeriod = 'Bulan ini';
   int? _touchedIndex;
+  
+  bool _isLoading = false;
+  ReportsSummary? _summary;
+  CategoryBreakdown? _breakdown;
 
   final List<String> _periods = [
     'Hari ini',
@@ -19,8 +29,61 @@ class _ReportsPageState extends State<ReportsPage> {
     'Tahun ini',
   ];
 
+  final Map<String, String> _periodMapping = {
+    'Hari ini': 'today',
+    'Minggu ini': 'week',
+    'Bulan ini': 'month',
+    'Tahun ini': 'year',
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _loadReportsData();
+  }
+
+  Future<void> _loadReportsData() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final apiPeriod = _periodMapping[_selectedPeriod] ?? 'month';
+      
+      final results = await Future.wait([
+        _api.getReportsSummary(period: apiPeriod),
+        _api.getCategoryBreakdown(period: apiPeriod, type: 'all'),
+      ]);
+
+      if (!mounted) return;
+
+      setState(() {
+        _summary = results[0] as ReportsSummary?;
+        _breakdown = results[1] as CategoryBreakdown?;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal memuat laporan: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -33,12 +96,12 @@ class _ReportsPageState extends State<ReportsPage> {
         foregroundColor: Colors.grey[800],
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        child: RefreshIndicator(
+          onRefresh: _loadReportsData,
+          child: ListView(
+            padding: const EdgeInsets.all(16.0),
             children: [
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
 
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -60,9 +123,12 @@ class _ReportsPageState extends State<ReportsPage> {
                         )
                         .toList(),
                     onChanged: (value) {
-                      setState(() {
-                        _selectedPeriod = value!;
-                      });
+                      if (value != null) {
+                        setState(() {
+                          _selectedPeriod = value;
+                        });
+                        _loadReportsData();
+                      }
                     },
                   ),
                 ),
@@ -75,7 +141,7 @@ class _ReportsPageState extends State<ReportsPage> {
                   Expanded(
                     child: _buildSummaryCard(
                       'Total Pemasukan',
-                      'Rp 8.000.000',
+                      _summary?.totalIncome ?? 0,
                       Colors.green,
                       Icons.arrow_upward,
                     ),
@@ -84,7 +150,7 @@ class _ReportsPageState extends State<ReportsPage> {
                   Expanded(
                     child: _buildSummaryCard(
                       'Total Pengeluaran',
-                      'Rp 3.000.000',
+                      _summary?.totalExpense ?? 0,
                       Colors.red,
                       Icons.arrow_downward,
                     ),
@@ -96,8 +162,8 @@ class _ReportsPageState extends State<ReportsPage> {
 
               _buildSummaryCard(
                 'Selisih',
-                'Rp 5.000.000',
-                Colors.blue,
+                _summary?.difference ?? 0,
+                (_summary?.difference ?? 0) >= 0 ? Colors.blue : Colors.orange,
                 Icons.account_balance_wallet,
               ),
 
@@ -122,7 +188,7 @@ class _ReportsPageState extends State<ReportsPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Distribusi Pengeluaran',
+                      'Distribusi Kategori',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -130,86 +196,31 @@ class _ReportsPageState extends State<ReportsPage> {
                     ),
                     const SizedBox(height: 16),
                     Expanded(
-                      child: PieChart(
-                        PieChartData(
-                          sectionsSpace: 2,
-                          centerSpaceRadius: 60,
-                          pieTouchData: PieTouchData(
-                            touchCallback: (FlTouchEvent event, pieTouchResponse) {
-                              if (!event.isInterestedForInteractions ||
-                                  pieTouchResponse == null ||
-                                  pieTouchResponse.touchedSection == null) {
-                                setState(() {
-                                  _touchedIndex = null;
-                                });
-                                return;
-                              }
-                              setState(() {
-                                _touchedIndex = pieTouchResponse
-                                    .touchedSection!.touchedSectionIndex;
-                              });
-                            },
-                          ),
-                          sections: [
-                            PieChartSectionData(
-                              value: 35,
-                              title: '35%',
-                              titleStyle: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                      child: (_breakdown?.categories.isEmpty ?? true)
+                          ? const Center(child: Text('Belum ada data kategori'))
+                          : PieChart(
+                              PieChartData(
+                                sectionsSpace: 2,
+                                centerSpaceRadius: 60,
+                                pieTouchData: PieTouchData(
+                                  touchCallback: (FlTouchEvent event, pieTouchResponse) {
+                                    if (!event.isInterestedForInteractions ||
+                                        pieTouchResponse == null ||
+                                        pieTouchResponse.touchedSection == null) {
+                                      setState(() {
+                                        _touchedIndex = null;
+                                      });
+                                      return;
+                                    }
+                                    setState(() {
+                                      _touchedIndex = pieTouchResponse
+                                          .touchedSection!.touchedSectionIndex;
+                                    });
+                                  },
+                                ),
+                                sections: _generatePieChartSections(),
                               ),
-                              color: Colors.blue[600],
-                              badgeWidget: _touchedIndex == 0 
-                                  ? _Badge('Makanan', 'Rp 1.050.000', Colors.blue[600]!)
-                                  : null,
-                              badgePositionPercentageOffset: .98,
                             ),
-                            PieChartSectionData(
-                              value: 25,
-                              title: '25%',
-                              titleStyle: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                              color: Colors.green[600],
-                              badgeWidget: _touchedIndex == 1 
-                                  ? _Badge('Transportasi', 'Rp 750.000', Colors.green[600]!)
-                                  : null,
-                              badgePositionPercentageOffset: .98,
-                            ),
-                            PieChartSectionData(
-                              value: 20,
-                              title: '20%',
-                              titleStyle: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                              color: Colors.orange[600],
-                              badgeWidget: _touchedIndex == 2 
-                                  ? _Badge('Belanja', 'Rp 600.000', Colors.orange[600]!)
-                                  : null,
-                              badgePositionPercentageOffset: .98,
-                            ),
-                            PieChartSectionData(
-                              value: 20,
-                              title: '20%',
-                              titleStyle: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                              color: Colors.purple[600],
-                              badgeWidget: _touchedIndex == 3 
-                                  ? _Badge('Tagihan', 'Rp 600.000', Colors.purple[600]!)
-                                  : null,
-                              badgePositionPercentageOffset: .98,
-                            ),
-                          ],
-                        ),
-                      ),
                     ),
                   ],
                 ),
@@ -218,41 +229,26 @@ class _ReportsPageState extends State<ReportsPage> {
               const SizedBox(height: 24),
 
               const Text(
-                'Kategori Pengeluaran',
+                'Kategori Transaksi',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
 
-              Expanded(
-                child: ListView(
-                  children: [
-                    _buildCategoryItem(
-                      'Makanan',
-                      'Rp 1.050.000',
-                      35,
-                      Colors.blue,
-                    ),
-                    _buildCategoryItem(
-                      'Transportasi',
-                      'Rp 750.000',
-                      25,
-                      Colors.green,
-                    ),
-                    _buildCategoryItem(
-                      'Belanja',
-                      'Rp 600.000',
-                      20,
-                      Colors.orange,
-                    ),
-                    _buildCategoryItem(
-                      'Tagihan',
-                      'Rp 600.000',
-                      20,
-                      Colors.purple,
-                    ),
-                  ],
+              if (_breakdown?.categories.isEmpty ?? true)
+                const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Center(child: Text('Belum ada data kategori')),
+                )
+              else
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _breakdown!.categories.length,
+                  itemBuilder: (context, index) {
+                    final category = _breakdown!.categories[index];
+                    return _buildCategoryItem(category);
+                  },
                 ),
-              ),
             ],
           ),
         ),
@@ -260,9 +256,58 @@ class _ReportsPageState extends State<ReportsPage> {
     );
   }
 
+  List<PieChartSectionData> _generatePieChartSections() {
+    if (_breakdown == null || _breakdown!.categories.isEmpty) {
+      return [];
+    }
+
+    return List.generate(_breakdown!.categories.length, (i) {
+      final isTouched = i == _touchedIndex;
+      final category = _breakdown!.categories[i];
+      final fontSize = isTouched ? 20.0 : 14.0;
+      final radius = isTouched ? 60.0 : 50.0;
+
+      // Parse color from string or use default colors
+      final Color color = _getColorForIndex(i);
+
+      return PieChartSectionData(
+        color: color,
+        value: category.percentage,
+        title: '${category.percentage.toStringAsFixed(1)}%',
+        radius: radius,
+        titleStyle: TextStyle(
+          fontSize: fontSize,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+        badgeWidget: _touchedIndex == i 
+            ? _Badge(
+                category.name, 
+                'Rp ${NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 0).format(category.amount)}',
+                color
+              )
+            : null,
+        badgePositionPercentageOffset: .98,
+      );
+    });
+  }
+
+  Color _getColorForIndex(int index) {
+    final colors = [
+      Colors.blue[600]!,
+      Colors.green[600]!,
+      Colors.orange[600]!,
+      Colors.purple[600]!,
+      Colors.red[600]!,
+      Colors.teal[600]!,
+      Colors.pink[600]!,
+    ];
+    return colors[index % colors.length];
+  }
+
   Widget _buildSummaryCard(
     String title,
-    String amount,
+    double amount,
     Color color,
     IconData icon,
   ) {
@@ -285,7 +330,7 @@ class _ReportsPageState extends State<ReportsPage> {
                   title,
                   style: TextStyle(
                     fontSize: 14,
-                    color: color.withAlpha(80),
+                    color: color.withAlpha(180), // Fix: use consistent alpha logic or just color
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -294,9 +339,9 @@ class _ReportsPageState extends State<ReportsPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            amount,
+            'Rp ${NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 0).format(amount)}',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 16, // Slightly smaller font to fit
               fontWeight: FontWeight.bold,
               color: color,
             ),
@@ -306,74 +351,118 @@ class _ReportsPageState extends State<ReportsPage> {
     );
   }
 
-  Widget _buildCategoryItem(
-    String category,
-    String amount,
-    double percentage,
-    Color color,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withAlpha(10),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                category,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              Text(
-                amount,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            height: 8,
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: FractionallySizedBox(
-              alignment: Alignment.centerLeft,
-              widthFactor: percentage / 100,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
+  Color _parseColor(String hexColor) {
+    try {
+      hexColor = hexColor.replaceAll('#', '');
+      if (hexColor.length == 6) {
+        hexColor = 'FF$hexColor';
+      }
+      return Color(int.parse(hexColor, radix: 16));
+    } catch (e) {
+      return Colors.blue;
+    }
+  }
+
+  Widget _buildCategoryItem(CategoryItem category) {
+    final color = _parseColor(category.color);
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CategoryDetailsPage(
+              categoryName: category.name,
+              type: 'all',
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            '$percentage%',
-            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-          ),
-        ],
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withAlpha(10),
+              spreadRadius: 1,
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      category.name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  'Rp ${NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 0).format(category.amount)}',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Container(
+              height: 8,
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: FractionallySizedBox(
+                alignment: Alignment.centerLeft,
+                widthFactor: (category.percentage / 100).clamp(0.0, 1.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${category.count} Transaksi',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+                Text(
+                  '${category.percentage.toStringAsFixed(1)}%',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

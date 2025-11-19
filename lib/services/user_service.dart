@@ -118,7 +118,7 @@ class UserService {
           throw Exception(responseData['message'] ?? 'Failed to fetch user profile');
         }
 
-        final user = User.fromJson(responseData['data']['user']);
+        final user = User.fromJson(responseData['data']);
         
         // Update stored user data
         await _saveUser(user.toJson());
@@ -153,7 +153,7 @@ class UserService {
           throw Exception(responseData['message'] ?? 'Failed to update user profile');
         }
 
-        final user = User.fromJson(responseData['data']['user']);
+        final user = User.fromJson(responseData['data']);
         
         // Update stored user data
         await _saveUser(user.toJson());

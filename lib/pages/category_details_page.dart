@@ -116,9 +116,14 @@ class _CategoryDetailsPageState extends State<CategoryDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final String title = widget.type == 'income' 
-        ? 'Pemasukan ${widget.categoryName}'
-        : 'Pengeluaran ${widget.categoryName}';
+    String title;
+    if (widget.type == 'income') {
+      title = 'Pemasukan ${widget.categoryName}';
+    } else if (widget.type == 'expense') {
+      title = 'Pengeluaran ${widget.categoryName}';
+    } else {
+      title = 'Detail ${widget.categoryName}';
+    }
 
     return Scaffold(
       appBar: AppBar(

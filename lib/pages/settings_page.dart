@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../services/api_wrapper.dart';
+import '../services/user_service.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -8,8 +10,47 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  final ApiWrapper _api = ApiWrapper();
+
+  bool _isLoading = false;
+  User? _user;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final user = await _api.getUserProfile();
+      if (mounted) {
+        setState(() {
+          _user = user;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final settings = _user?.settings;
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -24,6 +65,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
               const SizedBox(height: 24),
 
+              // Profile Card
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -43,20 +85,24 @@ class _SettingsPageState extends State<SettingsPage> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(30),
                       ),
-                      child: Icon(
-                        Icons.person,
-                        size: 30,
-                        color: Colors.blue[600],
-                      ),
+                      child: _user?.avatar != null && _user!.avatar.isNotEmpty
+                          ? CircleAvatar(
+                              backgroundImage: NetworkImage(_user!.avatar),
+                            )
+                          : Icon(
+                              Icons.person,
+                              size: 30,
+                              color: Colors.blue[600],
+                            ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'John Doe',
-                            style: TextStyle(
+                          Text(
+                            _user?.name ?? 'Loading...',
+                            style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
@@ -64,8 +110,8 @@ class _SettingsPageState extends State<SettingsPage> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'john.doe@example.com',
-                            style: TextStyle(
+                            _user?.email ?? 'Loading...',
+                            style: const TextStyle(
                               fontSize: 14,
                               color: Colors.white70,
                             ),
@@ -73,13 +119,25 @@ class _SettingsPageState extends State<SettingsPage> {
                         ],
                       ),
                     ),
-                    Icon(Icons.edit, color: Colors.white70),
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.white70),
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Edit profil belum diimplementasikan',
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ],
                 ),
               ),
 
               const SizedBox(height: 32),
 
+              // About Section
               const Text(
                 'Tentang',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -138,6 +196,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
               ),
+              const SizedBox(height: 32),
             ],
           ),
         ),
@@ -151,6 +210,7 @@ class _SettingsPageState extends State<SettingsPage> {
     IconData icon,
     VoidCallback onTap, {
     bool isDanger = false,
+    String? trailingText,
   }) {
     return ListTile(
       leading: Icon(icon, color: isDanger ? Colors.red : Colors.blue[600]),
@@ -165,12 +225,45 @@ class _SettingsPageState extends State<SettingsPage> {
         subtitle,
         style: TextStyle(color: isDanger ? Colors.red[300] : Colors.grey[600]),
       ),
-      trailing: Icon(
-        Icons.arrow_forward_ios,
-        size: 16,
-        color: isDanger ? Colors.red[300] : Colors.grey[400],
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (trailingText != null)
+            Text(
+              trailingText,
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          if (trailingText != null) const SizedBox(width: 8),
+          Icon(
+            Icons.arrow_forward_ios,
+            size: 16,
+            color: isDanger ? Colors.red[300] : Colors.grey[400],
+          ),
+        ],
       ),
       onTap: onTap,
+    );
+  }
+
+  Widget _buildSwitchItem(
+    String title,
+    String subtitle,
+    IconData icon,
+    bool value,
+    ValueChanged<bool> onChanged,
+  ) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.blue[600]),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+      subtitle: Text(subtitle, style: TextStyle(color: Colors.grey[600])),
+      trailing: Switch(
+        value: value,
+        onChanged: onChanged,
+        activeColor: Colors.blue[600],
+      ),
     );
   }
 
@@ -213,14 +306,27 @@ class _SettingsPageState extends State<SettingsPage> {
             child: const Text('Batal'),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Berhasil keluar'),
-                  backgroundColor: Colors.green,
-                ),
-              );
+            onPressed: () async {
+              Navigator.pop(context); // Close dialog
+
+              // Show loading indicator if desired, or just proceed
+              final success = await _api.logout();
+
+              if (mounted) {
+                if (success) {
+                  // Navigate to login page and remove all previous routes
+                  Navigator.of(
+                    context,
+                  ).pushNamedAndRemoveUntil('/login', (route) => false);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Gagal keluar. Silakan coba lagi.'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
             },
             child: const Text('Keluar', style: TextStyle(color: Colors.red)),
           ),
