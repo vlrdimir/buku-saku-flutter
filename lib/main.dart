@@ -3,6 +3,9 @@ import 'pages/dashboard_page.dart';
 import 'pages/transaction_page.dart';
 import 'pages/reports_page.dart';
 import 'pages/settings_page.dart';
+import 'pages/login_page.dart';
+import 'pages/register_page.dart';
+import 'services/auth_service.dart';
 
 void main() {
   runApp(const FinancialApp());
@@ -20,9 +23,58 @@ class FinancialApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      home: const MainNavigation(),
+      // Define routes for navigation
+      routes: {
+        '/login': (context) => const LoginPage(),
+        '/register': (context) => const RegisterPage(),
+        '/dashboard': (context) => const MainNavigation(),
+      },
+      // Use AuthWrapper to determine initial screen
+      home: const AuthWrapper(),
       debugShowCheckedModeBanner: false,
     );
+  }
+}
+
+class AuthWrapper extends StatefulWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  final AuthServiceNew _authService = AuthServiceNew();
+  bool _isLoading = true;
+  bool _isAuthenticated = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAuth();
+  }
+
+  Future<void> _checkAuth() async {
+    // Check if user has a valid token
+    final hasAuth = await _authService.hasStoredAuth();
+    if (mounted) {
+      setState(() {
+        _isAuthenticated = hasAuth;
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // Redirect to MainNavigation if authenticated, otherwise LoginPage
+    return _isAuthenticated ? const MainNavigation() : const LoginPage();
   }
 }
 
