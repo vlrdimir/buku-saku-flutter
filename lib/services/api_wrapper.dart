@@ -12,8 +12,10 @@ class ApiWrapper {
 
   // Service instances
   final auth.AuthServiceNew _authService = auth.AuthServiceNew();
-  final dashboard.DashboardService _dashboardService = dashboard.DashboardService();
-  final transaction.TransactionService _transactionService = transaction.TransactionService();
+  final dashboard.DashboardService _dashboardService =
+      dashboard.DashboardService();
+  final transaction.TransactionService _transactionService =
+      transaction.TransactionService();
   final reports.ReportsService _reportsService = reports.ReportsService();
   final user.UserService _userService = user.UserService();
 
@@ -23,7 +25,11 @@ class ApiWrapper {
     return await _authService.login(email, password);
   }
 
-  Future<auth.AuthResult> register(String name, String email, String password) async {
+  Future<auth.AuthResult> register(
+    String name,
+    String email,
+    String password,
+  ) async {
     developer.log('🔐 API Wrapper: Register attempt');
     return await _authService.register(name, email, password);
   }
@@ -59,7 +65,9 @@ class ApiWrapper {
     }
   }
 
-  Future<List<dashboard.ChartDataPoint>> getChartData({String period = '7days'}) async {
+  Future<List<dashboard.ChartDataPoint>> getChartData({
+    String period = '7days',
+  }) async {
     developer.log('🔐 API Wrapper: Getting chart data for period: $period');
     try {
       return await _dashboardService.getChartData(period: period);
@@ -141,8 +149,12 @@ class ApiWrapper {
   }
 
   // Reports
-  Future<reports.ReportsSummary?> getReportsSummary({required String period}) async {
-    developer.log('🔐 API Wrapper: Getting reports summary for period: $period');
+  Future<reports.ReportsSummary?> getReportsSummary({
+    required String period,
+  }) async {
+    developer.log(
+      '🔐 API Wrapper: Getting reports summary for period: $period',
+    );
     try {
       return await _reportsService.getReportsSummary(period: period);
     } catch (e) {
@@ -155,9 +167,14 @@ class ApiWrapper {
     required String period,
     String type = 'expense',
   }) async {
-    developer.log('🔐 API Wrapper: Getting category breakdown for period: $period, type: $type');
+    developer.log(
+      '🔐 API Wrapper: Getting category breakdown for period: $period, type: $type',
+    );
     try {
-      return await _reportsService.getCategoryBreakdown(period: period, type: type);
+      return await _reportsService.getCategoryBreakdown(
+        period: period,
+        type: type,
+      );
     } catch (e) {
       developer.log('❌ API Wrapper: Category breakdown error: $e');
       return null;
@@ -168,9 +185,14 @@ class ApiWrapper {
     required String period,
     required String chartType,
   }) async {
-    developer.log('🔐 API Wrapper: Getting chart items for period: $period, type: $chartType');
+    developer.log(
+      '🔐 API Wrapper: Getting chart items for period: $period, type: $chartType',
+    );
     try {
-      return await _reportsService.getReportsChartData(period: period, chartType: chartType);
+      return await _reportsService.getReportsChartData(
+        period: period,
+        chartType: chartType,
+      );
     } catch (e) {
       developer.log('❌ API Wrapper: Chart items error: $e');
       return [];
@@ -221,8 +243,7 @@ class ApiWrapper {
     developer.log('🔐 API Wrapper: Updating user settings');
     try {
       await _userService.getUserSettings();
-      
-      
+
       await _userService.updateUserSettings(
         currency: currency,
         language: language,
@@ -240,10 +261,7 @@ class ApiWrapper {
 // Extension methods for easier access
 extension ApiWrapperExtensions on ApiWrapper {
   String formatCurrency(double amount) {
-    return 'Rp ${amount.toStringAsFixed(0).replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match match) => '${match[1]}.',
-    )}';
+    return 'Rp ${amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match match) => '${match[1]}.')}';
   }
 
   bool isProfitable(reports.ReportsSummary summary) {
@@ -252,6 +270,8 @@ extension ApiWrapperExtensions on ApiWrapper {
 
   double getProfitMargin(reports.ReportsSummary summary) {
     if (summary.totalIncome == 0) return 0.0;
-    return ((summary.totalIncome - summary.totalExpense) / summary.totalIncome) * 100;
+    return ((summary.totalIncome - summary.totalExpense) /
+            summary.totalIncome) *
+        100;
   }
 }
