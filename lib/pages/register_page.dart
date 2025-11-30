@@ -139,20 +139,32 @@ class _RegisterPageState extends State<RegisterPage> {
           // Navigate to dashboard after success
           Navigator.pushReplacementNamed(context, '/dashboard');
         } else {
-          throw Exception(authResult.error ?? 'Registrasi gagal');
+          final errorMsg = authResult.error ?? 'Registrasi gagal';
+          setState(() {
+            _errorMessage = errorMsg;
+          });
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMsg),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
         }
       }
     } catch (e) {
       developer.log('❌ Registration ERROR: $e');
 
       if (mounted) {
+        final errorMsg = e.toString().replaceAll('Exception: ', '');
         setState(() {
-          _errorMessage = e.toString();
+          _errorMessage = errorMsg;
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Registrasi gagal: ${e.toString()}'),
+            content: Text(errorMsg),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
           ),

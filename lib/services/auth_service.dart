@@ -62,9 +62,16 @@ class AuthServiceNew {
       developer.log('📊 Registration response status: ${response.statusCode}');
       developer.log('📊 Registration response body: ${response.body}');
 
-      final Map<String, dynamic> responseData = jsonDecode(response.body);
+      Map<String, dynamic> responseData;
+      try {
+        responseData = jsonDecode(response.body);
+      } catch (e) {
+        developer.log('❌ JSON parsing error: ${e.toString()}');
+        return AuthResult.failure(error: 'Invalid response from server');
+      }
 
-      if (response.statusCode == 201 && responseData['status'] == 'success') {
+      if ((response.statusCode == 200 || response.statusCode == 201) && 
+          responseData['status'] == 'success') {
         final String jwtToken = responseData['data']['token'];
         final Map<String, dynamic> userData = responseData['data']['user'];
 
