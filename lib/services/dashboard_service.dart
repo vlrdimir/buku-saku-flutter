@@ -2,15 +2,16 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config/api_config.dart';
 
 class DashboardService {
   static final DashboardService _instance = DashboardService._internal();
   factory DashboardService() => _instance;
   DashboardService._internal();
 
-  // Base URL configuration
-  static const String _baseUrl = 'http://localhost:8082/v1';
-  static const String _tokenKey = 'jwt_token';
+  // Base URL configuration - Now using centralized ApiConfig
+  static const String _baseUrl = ApiConfig.baseUrl;
+  static const String _tokenKey = ApiConfig.tokenKey;
 
   // Get stored JWT token
   Future<String?> _getStoredToken() async {
@@ -84,21 +85,30 @@ class DashboardService {
     try {
       developer.log('🔄 Fetching dashboard summary');
 
-      final response = await _makeAuthenticatedRequest('/dashboard/summary', 'GET');
+      final response = await _makeAuthenticatedRequest(
+        '/dashboard/summary',
+        'GET',
+      );
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
-        
+
         if (responseData['status'] != 'success') {
-          throw Exception(responseData['message'] ?? 'Failed to fetch dashboard summary');
+          throw Exception(
+            responseData['message'] ?? 'Failed to fetch dashboard summary',
+          );
         }
 
-        final summary = DashboardSummary.fromJson(responseData['data']['summary']);
+        final summary = DashboardSummary.fromJson(
+          responseData['data']['summary'],
+        );
         developer.log('✅ Dashboard summary fetched successfully');
         return summary;
       } else {
         final errorData = jsonDecode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to fetch dashboard summary');
+        throw Exception(
+          errorData['message'] ?? 'Failed to fetch dashboard summary',
+        );
       }
     } catch (e) {
       developer.log('❌ Get dashboard summary error: $e');
@@ -119,16 +129,21 @@ class DashboardService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
-        
+
         if (responseData['status'] != 'success') {
-          throw Exception(responseData['message'] ?? 'Failed to fetch chart data');
+          throw Exception(
+            responseData['message'] ?? 'Failed to fetch chart data',
+          );
         }
 
-        final List<ChartDataPoint> chartData = (responseData['data']['chart_data'] as List)
-            .map((item) => ChartDataPoint.fromJson(item))
-            .toList();
+        final List<ChartDataPoint> chartData =
+            (responseData['data']['chart_data'] as List)
+                .map((item) => ChartDataPoint.fromJson(item))
+                .toList();
 
-        developer.log('✅ Chart data fetched successfully: ${chartData.length} points');
+        developer.log(
+          '✅ Chart data fetched successfully: ${chartData.length} points',
+        );
         return chartData;
       } else {
         final errorData = jsonDecode(response.body);
@@ -145,24 +160,34 @@ class DashboardService {
     try {
       developer.log('🔄 Fetching recent transactions for dashboard');
 
-      final response = await _makeAuthenticatedRequest('/transactions/recent', 'GET');
+      final response = await _makeAuthenticatedRequest(
+        '/transactions/recent',
+        'GET',
+      );
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
-        
+
         if (responseData['status'] != 'success') {
-          throw Exception(responseData['message'] ?? 'Failed to fetch recent transactions');
+          throw Exception(
+            responseData['message'] ?? 'Failed to fetch recent transactions',
+          );
         }
 
-        final List<Transaction> transactions = (responseData['data']['transactions'] as List)
-            .map((item) => Transaction.fromJson(item))
-            .toList();
+        final List<Transaction> transactions =
+            (responseData['data']['transactions'] as List)
+                .map((item) => Transaction.fromJson(item))
+                .toList();
 
-        developer.log('✅ Recent transactions fetched: ${transactions.length} items');
+        developer.log(
+          '✅ Recent transactions fetched: ${transactions.length} items',
+        );
         return transactions;
       } else {
         final errorData = jsonDecode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to fetch recent transactions');
+        throw Exception(
+          errorData['message'] ?? 'Failed to fetch recent transactions',
+        );
       }
     } catch (e) {
       developer.log('❌ Get recent transactions error: $e');
@@ -203,18 +228,17 @@ class DashboardSummary {
     };
   }
 
-  double get savingsRate => totalIncome > 0 ? (totalIncome - totalExpense) / totalIncome * 100 : 0;
-  double get expenseRate => totalIncome > 0 ? totalExpense / totalIncome * 100 : 0;
+  double get savingsRate =>
+      totalIncome > 0 ? (totalIncome - totalExpense) / totalIncome * 100 : 0;
+  double get expenseRate =>
+      totalIncome > 0 ? totalExpense / totalIncome * 100 : 0;
 }
 
 class SummaryPeriod {
   final String startDate;
   final String endDate;
 
-  SummaryPeriod({
-    required this.startDate,
-    required this.endDate,
-  });
+  SummaryPeriod({required this.startDate, required this.endDate});
 
   factory SummaryPeriod.fromJson(Map<String, dynamic> json) {
     return SummaryPeriod(
@@ -224,10 +248,7 @@ class SummaryPeriod {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'start_date': startDate,
-      'end_date': endDate,
-    };
+    return {'start_date': startDate, 'end_date': endDate};
   }
 }
 

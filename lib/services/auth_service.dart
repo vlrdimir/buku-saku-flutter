@@ -3,16 +3,17 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config/api_config.dart';
 
 class AuthServiceNew {
   static final AuthServiceNew _instance = AuthServiceNew._internal();
   factory AuthServiceNew() => _instance;
   AuthServiceNew._internal();
 
-  // 🔧 Configuration - Update based on your environment
-  static const String _baseUrl = 'http://localhost:8082/v1';
-  static const String _tokenKey = 'jwt_token';
-  static const String _userKey = 'user_data';
+  // 🔧 Configuration - Now using centralized ApiConfig
+  static const String _baseUrl = ApiConfig.baseUrl;
+  static const String _tokenKey = ApiConfig.tokenKey;
+  static const String _userKey = ApiConfig.userKey;
 
   // Check if user has valid stored authentication
   Future<bool> hasStoredAuth() async {
@@ -70,7 +71,7 @@ class AuthServiceNew {
         return AuthResult.failure(error: 'Invalid response from server');
       }
 
-      if ((response.statusCode == 200 || response.statusCode == 201) && 
+      if ((response.statusCode == 200 || response.statusCode == 201) &&
           responseData['status'] == 'success') {
         final String jwtToken = responseData['data']['token'];
         final Map<String, dynamic> userData = responseData['data']['user'];

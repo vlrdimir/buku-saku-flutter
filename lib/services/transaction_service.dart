@@ -2,15 +2,16 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config/api_config.dart';
 
 class TransactionService {
   static final TransactionService _instance = TransactionService._internal();
   factory TransactionService() => _instance;
   TransactionService._internal();
 
-  // Base URL configuration
-  static const String _baseUrl = 'http://localhost:8082/v1';
-  static const String _tokenKey = 'jwt_token';
+  // Base URL configuration - Now using centralized ApiConfig
+  static const String _baseUrl = ApiConfig.baseUrl;
+  static const String _tokenKey = ApiConfig.tokenKey;
 
   // Get stored JWT token
   Future<String?> _getStoredToken() async {
@@ -111,16 +112,21 @@ class TransactionService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
-        
+
         if (responseData['status'] != 'success') {
-          throw Exception(responseData['message'] ?? 'Failed to fetch transactions');
+          throw Exception(
+            responseData['message'] ?? 'Failed to fetch transactions',
+          );
         }
 
-        final List<Transaction> transactions = (responseData['data']['transactions'] as List)
-            .map((item) => Transaction.fromJson(item))
-            .toList();
+        final List<Transaction> transactions =
+            (responseData['data']['transactions'] as List)
+                .map((item) => Transaction.fromJson(item))
+                .toList();
 
-        final pagination = Pagination.fromJson(responseData['data']['pagination']);
+        final pagination = Pagination.fromJson(
+          responseData['data']['pagination'],
+        );
 
         developer.log('✅ Retrieved ${transactions.length} transactions');
         return TransactionListResponse(
@@ -142,24 +148,32 @@ class TransactionService {
     try {
       developer.log('🔄 Fetching recent transactions');
 
-      final response = await _makeAuthenticatedRequest('/transactions/recent', 'GET');
+      final response = await _makeAuthenticatedRequest(
+        '/transactions/recent',
+        'GET',
+      );
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
-        
+
         if (responseData['status'] != 'success') {
-          throw Exception(responseData['message'] ?? 'Failed to fetch recent transactions');
+          throw Exception(
+            responseData['message'] ?? 'Failed to fetch recent transactions',
+          );
         }
 
-        final List<Transaction> transactions = (responseData['data']['transactions'] as List)
-            .map((item) => Transaction.fromJson(item))
-            .toList();
+        final List<Transaction> transactions =
+            (responseData['data']['transactions'] as List)
+                .map((item) => Transaction.fromJson(item))
+                .toList();
 
         developer.log('✅ Retrieved ${transactions.length} recent transactions');
         return transactions;
       } else {
         final errorData = jsonDecode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to fetch recent transactions');
+        throw Exception(
+          errorData['message'] ?? 'Failed to fetch recent transactions',
+        );
       }
     } catch (e) {
       developer.log('❌ Get recent transactions error: $e');
@@ -192,12 +206,16 @@ class TransactionService {
 
       if (response.statusCode == 201) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
-        
+
         if (responseData['status'] != 'success') {
-          throw Exception(responseData['message'] ?? 'Failed to create transaction');
+          throw Exception(
+            responseData['message'] ?? 'Failed to create transaction',
+          );
         }
 
-        final transaction = Transaction.fromJson(responseData['data']['transaction']);
+        final transaction = Transaction.fromJson(
+          responseData['data']['transaction'],
+        );
         developer.log('✅ Transaction created successfully: ${transaction.id}');
         return transaction;
       } else {
@@ -236,12 +254,16 @@ class TransactionService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
-        
+
         if (responseData['status'] != 'success') {
-          throw Exception(responseData['message'] ?? 'Failed to update transaction');
+          throw Exception(
+            responseData['message'] ?? 'Failed to update transaction',
+          );
         }
 
-        final transaction = Transaction.fromJson(responseData['data']['transaction']);
+        final transaction = Transaction.fromJson(
+          responseData['data']['transaction'],
+        );
         developer.log('✅ Transaction updated successfully: ${transaction.id}');
         return transaction;
       } else {
@@ -259,13 +281,18 @@ class TransactionService {
     try {
       developer.log('🔄 Deleting transaction: $id');
 
-      final response = await _makeAuthenticatedRequest('/transactions/$id', 'DELETE');
+      final response = await _makeAuthenticatedRequest(
+        '/transactions/$id',
+        'DELETE',
+      );
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
-        
+
         if (responseData['status'] != 'success') {
-          throw Exception(responseData['message'] ?? 'Failed to delete transaction');
+          throw Exception(
+            responseData['message'] ?? 'Failed to delete transaction',
+          );
         }
 
         developer.log('✅ Transaction deleted successfully: $id');
@@ -279,26 +306,36 @@ class TransactionService {
       rethrow;
     }
   }
+
   // Get transaction detail
   Future<Transaction> getTransactionDetail(String id) async {
     try {
       developer.log('🔄 Fetching transaction detail: $id');
 
-      final response = await _makeAuthenticatedRequest('/transactions/$id', 'GET');
+      final response = await _makeAuthenticatedRequest(
+        '/transactions/$id',
+        'GET',
+      );
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
-        
+
         if (responseData['status'] != 'success') {
-          throw Exception(responseData['message'] ?? 'Failed to fetch transaction detail');
+          throw Exception(
+            responseData['message'] ?? 'Failed to fetch transaction detail',
+          );
         }
 
         final transaction = Transaction.fromJson(responseData['data']);
-        developer.log('✅ Transaction detail fetched successfully: ${transaction.id}');
+        developer.log(
+          '✅ Transaction detail fetched successfully: ${transaction.id}',
+        );
         return transaction;
       } else {
         final errorData = jsonDecode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to fetch transaction detail');
+        throw Exception(
+          errorData['message'] ?? 'Failed to fetch transaction detail',
+        );
       }
     } catch (e) {
       developer.log('❌ Get transaction detail error: $e');

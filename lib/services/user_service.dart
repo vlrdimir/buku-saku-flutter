@@ -2,16 +2,17 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config/api_config.dart';
 
 class UserService {
   static final UserService _instance = UserService._internal();
   factory UserService() => _instance;
   UserService._internal();
 
-  // Base URL configuration
-  static const String _baseUrl = 'http://localhost:8082/v1';
-  static const String _tokenKey = 'jwt_token';
-  static const String _userKey = 'user_data';
+  // Base URL configuration - Now using centralized ApiConfig
+  static const String _baseUrl = ApiConfig.baseUrl;
+  static const String _tokenKey = ApiConfig.tokenKey;
+  static const String _userKey = ApiConfig.userKey;
 
   // Get stored JWT token
   Future<String?> _getStoredToken() async {

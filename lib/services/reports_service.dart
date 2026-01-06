@@ -2,15 +2,16 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config/api_config.dart';
 
 class ReportsService {
   static final ReportsService _instance = ReportsService._internal();
   factory ReportsService() => _instance;
   ReportsService._internal();
 
-  // Base URL configuration
-  static const String _baseUrl = 'http://localhost:8082/v1';
-  static const String _tokenKey = 'jwt_token';
+  // Base URL configuration - Now using centralized ApiConfig
+  static const String _baseUrl = ApiConfig.baseUrl;
+  static const String _tokenKey = ApiConfig.tokenKey;
 
   // Get stored JWT token
   Future<String?> _getStoredToken() async {
@@ -92,17 +93,23 @@ class ReportsService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
-        
+
         if (responseData['status'] != 'success') {
-          throw Exception(responseData['message'] ?? 'Failed to fetch reports summary');
+          throw Exception(
+            responseData['message'] ?? 'Failed to fetch reports summary',
+          );
         }
 
-        final summary = ReportsSummary.fromJson(responseData['data']['summary']);
+        final summary = ReportsSummary.fromJson(
+          responseData['data']['summary'],
+        );
         developer.log('✅ Reports summary fetched successfully');
         return summary;
       } else {
         final errorData = jsonDecode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to fetch reports summary');
+        throw Exception(
+          errorData['message'] ?? 'Failed to fetch reports summary',
+        );
       }
     } catch (e) {
       developer.log('❌ Get reports summary error: $e');
@@ -116,22 +123,23 @@ class ReportsService {
     String type = 'expense',
   }) async {
     try {
-      developer.log('🔄 Fetching category breakdown: period=$period, type=$type');
+      developer.log(
+        '🔄 Fetching category breakdown: period=$period, type=$type',
+      );
 
       final response = await _makeAuthenticatedRequest(
         '/reports/categories',
         'GET',
-        queryParams: {
-          'period': period,
-          'type': type,
-        },
+        queryParams: {'period': period, 'type': type},
       );
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
-        
+
         if (responseData['status'] != 'success') {
-          throw Exception(responseData['message'] ?? 'Failed to fetch category breakdown');
+          throw Exception(
+            responseData['message'] ?? 'Failed to fetch category breakdown',
+          );
         }
 
         final breakdown = CategoryBreakdown.fromJson(responseData['data']);
@@ -139,7 +147,9 @@ class ReportsService {
         return breakdown;
       } else {
         final errorData = jsonDecode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to fetch category breakdown');
+        throw Exception(
+          errorData['message'] ?? 'Failed to fetch category breakdown',
+        );
       }
     } catch (e) {
       developer.log('❌ Get category breakdown error: $e');
@@ -153,22 +163,23 @@ class ReportsService {
     required String chartType,
   }) async {
     try {
-      developer.log('🔄 Fetching reports chart data: period=$period, chart_type=$chartType');
+      developer.log(
+        '🔄 Fetching reports chart data: period=$period, chart_type=$chartType',
+      );
 
       final response = await _makeAuthenticatedRequest(
         '/reports/charts',
         'GET',
-        queryParams: {
-          'period': period,
-          'chart_type': chartType,
-        },
+        queryParams: {'period': period, 'chart_type': chartType},
       );
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
-        
+
         if (responseData['status'] != 'success') {
-          throw Exception(responseData['message'] ?? 'Failed to fetch chart data');
+          throw Exception(
+            responseData['message'] ?? 'Failed to fetch chart data',
+          );
         }
 
         // Handle null chart_data safely
@@ -177,11 +188,14 @@ class ReportsService {
           return [];
         }
 
-        final List<ChartItem> chartData = (responseData['data']['chart_data'] as List)
-            .map((item) => ChartItem.fromJson(item))
-            .toList();
+        final List<ChartItem> chartData =
+            (responseData['data']['chart_data'] as List)
+                .map((item) => ChartItem.fromJson(item))
+                .toList();
 
-        developer.log('✅ Reports chart data fetched successfully: ${chartData.length} items');
+        developer.log(
+          '✅ Reports chart data fetched successfully: ${chartData.length} items',
+        );
         return chartData;
       } else {
         final errorData = jsonDecode(response.body);
@@ -192,6 +206,7 @@ class ReportsService {
       rethrow;
     }
   }
+
   // Get details for a specific category
   Future<CategoryDetailsResponse> getCategoryDetails({
     required String category,
@@ -200,7 +215,9 @@ class ReportsService {
     int limit = 10,
   }) async {
     try {
-      developer.log('🔄 Fetching category details: category=$category, type=$type, page=$page');
+      developer.log(
+        '🔄 Fetching category details: category=$category, type=$type, page=$page',
+      );
 
       final response = await _makeAuthenticatedRequest(
         '/reports/category-details',
@@ -215,17 +232,23 @@ class ReportsService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
-        
+
         if (responseData['status'] != 'success') {
-          throw Exception(responseData['message'] ?? 'Failed to fetch category details');
+          throw Exception(
+            responseData['message'] ?? 'Failed to fetch category details',
+          );
         }
 
         final details = CategoryDetailsResponse.fromJson(responseData['data']);
-        developer.log('✅ Category details fetched successfully: ${details.transactions.length} transactions');
+        developer.log(
+          '✅ Category details fetched successfully: ${details.transactions.length} transactions',
+        );
         return details;
       } else {
         final errorData = jsonDecode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to fetch category details');
+        throw Exception(
+          errorData['message'] ?? 'Failed to fetch category details',
+        );
       }
     } catch (e) {
       developer.log('❌ Get category details error: $e');
@@ -347,7 +370,8 @@ class ReportsSummary {
     };
   }
 
-  double get savingsRate => totalIncome > 0 ? (difference / totalIncome) * 100 : 0;
+  double get savingsRate =>
+      totalIncome > 0 ? (difference / totalIncome) * 100 : 0;
   bool get isProfitable => totalIncome > totalExpense;
 }
 
@@ -355,23 +379,14 @@ class TransactionCount {
   final int income;
   final int expense;
 
-  TransactionCount({
-    required this.income,
-    required this.expense,
-  });
+  TransactionCount({required this.income, required this.expense});
 
   factory TransactionCount.fromJson(Map<String, dynamic> json) {
-    return TransactionCount(
-      income: json['income'],
-      expense: json['expense'],
-    );
+    return TransactionCount(income: json['income'], expense: json['expense']);
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'income': income,
-      'expense': expense,
-    };
+    return {'income': income, 'expense': expense};
   }
 
   int get total => income + expense;
@@ -381,10 +396,7 @@ class CategoryBreakdown {
   final List<CategoryItem> categories;
   final double totalAmount;
 
-  CategoryBreakdown({
-    required this.categories,
-    required this.totalAmount,
-  });
+  CategoryBreakdown({required this.categories, required this.totalAmount});
 
   factory CategoryBreakdown.fromJson(Map<String, dynamic> json) {
     return CategoryBreakdown(
