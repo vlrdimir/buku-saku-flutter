@@ -210,16 +210,6 @@ class ApiWrapper {
     }
   }
 
-  Future<user.UserSettings?> getUserSettings() async {
-    developer.log('🔐 API Wrapper: Getting user settings');
-    try {
-      return await _userService.getUserSettings();
-    } catch (e) {
-      developer.log('❌ API Wrapper: User settings error: $e');
-      return null;
-    }
-  }
-
   Future<bool> updateUserProfile({String? name}) async {
     developer.log('🔐 API Wrapper: Updating user profile');
     try {
@@ -230,29 +220,6 @@ class ApiWrapper {
       return false;
     } catch (e) {
       developer.log('❌ API Wrapper: Update profile error: $e');
-      return false;
-    }
-  }
-
-  Future<bool> updateUserSettings({
-    String? currency,
-    String? language,
-    bool? notifications,
-    String? theme,
-  }) async {
-    developer.log('🔐 API Wrapper: Updating user settings');
-    try {
-      await _userService.getUserSettings();
-
-      await _userService.updateUserSettings(
-        currency: currency,
-        language: language,
-        notifications: notifications,
-        theme: theme,
-      );
-      return true;
-    } catch (e) {
-      developer.log('❌ API Wrapper: Update settings error: $e');
       return false;
     }
   }

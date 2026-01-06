@@ -30,16 +30,30 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
   bool _isEditing = false;
   bool _isSaving = false;
 
-  // Temporary categories list (should ideally come from a service or constants)
-  final List<String> _categories = [
+  // Income categories
+  final List<String> _incomeCategories = [
+    'Gaji',
+    'Bonus',
+    'Investasi',
+    'Hadiah',
+    'Lainnya',
+  ];
+
+  // Expense categories
+  final List<String> _expenseCategories = [
     'Makanan',
     'Transportasi',
     'Belanja',
     'Tagihan',
-    'Gaji',
-    'Bonus',
-    'Lainnya'
+    'Hiburan',
+    'Kesehatan',
+    'Lainnya',
   ];
+
+  // Getter to return correct list based on transaction type
+  List<String> get _categories {
+    return _selectedType == 'income' ? _incomeCategories : _expenseCategories;
+  }
 
   @override
   void initState() {
@@ -65,8 +79,10 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
     });
 
     try {
-      final transaction = await _transactionService.getTransactionDetail(widget.transactionId);
-      
+      final transaction = await _transactionService.getTransactionDetail(
+        widget.transactionId,
+      );
+
       setState(() {
         _transaction = transaction;
         _isLoading = false;
@@ -121,7 +137,7 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
         _isSaving = false;
         _isEditing = false;
       });
-      
+
       // Refresh data
       _loadTransactionDetail();
 
@@ -220,25 +236,25 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                      const SizedBox(height: 16),
-                      Text(_errorMessage!),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _loadTransactionDetail,
-                        child: const Text('Coba Lagi'),
-                      ),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(_errorMessage!),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _loadTransactionDetail,
+                    child: const Text('Coba Lagi'),
                   ),
-                )
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: _isEditing ? _buildEditForm() : _buildDetailView(),
-                ),
+                ],
+              ),
+            )
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: _isEditing ? _buildEditForm() : _buildDetailView(),
+            ),
     );
   }
 
@@ -246,7 +262,9 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
     if (_transaction == null) return const SizedBox.shrink();
 
     final color = _transaction!.type == 'income' ? Colors.green : Colors.red;
-    final icon = _transaction!.type == 'income' ? Icons.arrow_downward : Icons.arrow_upward;
+    final icon = _transaction!.type == 'income'
+        ? Icons.arrow_downward
+        : Icons.arrow_upward;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -277,7 +295,10 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
               ),
               const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.grey[200],
                   borderRadius: BorderRadius.circular(20),
@@ -298,7 +319,11 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
         const SizedBox(height: 16),
         _buildDetailRow('Kategori', _transaction!.category, Icons.category),
         const SizedBox(height: 24),
-        _buildDetailRow('Deskripsi', _transaction!.description, Icons.description),
+        _buildDetailRow(
+          'Deskripsi',
+          _transaction!.description,
+          Icons.description,
+        ),
         const SizedBox(height: 24),
         _buildDetailRow(
           'Tanggal',
@@ -327,10 +352,7 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
             children: [
               Text(
                 label,
-                style: const TextStyle(
-                  color: Colors.grey,
-                  fontSize: 14,
-                ),
+                style: const TextStyle(color: Colors.grey, fontSize: 14),
               ),
               const SizedBox(height: 4),
               Text(
@@ -387,6 +409,13 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
             onChanged: (value) {
               setState(() {
                 _selectedType = value!;
+                // Reset category when type changes if current category doesn't exist in new type's list
+                final newCategories = _selectedType == 'income'
+                    ? _incomeCategories
+                    : _expenseCategories;
+                if (!newCategories.contains(_selectedCategory)) {
+                  _selectedCategory = '';
+                }
               });
             },
           ),
@@ -394,16 +423,15 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
 
           // Category Dropdown
           DropdownButtonFormField<String>(
-            value: _categories.contains(_selectedCategory) ? _selectedCategory : null,
+            value: _categories.contains(_selectedCategory)
+                ? _selectedCategory
+                : null,
             decoration: const InputDecoration(
               labelText: 'Kategori',
               border: OutlineInputBorder(),
             ),
             items: _categories.map((String category) {
-              return DropdownMenuItem(
-                value: category,
-                child: Text(category),
-              );
+              return DropdownMenuItem(value: category, child: Text(category));
             }).toList(),
             onChanged: (value) {
               setState(() {
@@ -461,8 +489,9 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                             _isEditing = false;
                             // Reset form values
                             if (_transaction != null) {
-                              _amountController.text =
-                                  _transaction!.amount.toInt().toString();
+                              _amountController.text = _transaction!.amount
+                                  .toInt()
+                                  .toString();
                               _descriptionController.text =
                                   _transaction!.description;
                               _dateController.text = _transaction!.date;
@@ -511,8 +540,18 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
 
   String _getMonthName(int month) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
     ];
     return months[month - 1];
   }

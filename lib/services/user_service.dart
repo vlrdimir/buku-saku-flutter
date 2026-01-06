@@ -113,13 +113,15 @@ class UserService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
-        
+
         if (responseData['status'] != 'success') {
-          throw Exception(responseData['message'] ?? 'Failed to fetch user profile');
+          throw Exception(
+            responseData['message'] ?? 'Failed to fetch user profile',
+          );
         }
 
         final user = User.fromJson(responseData['data']);
-        
+
         // Update stored user data
         await _saveUser(user.toJson());
 
@@ -148,13 +150,15 @@ class UserService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
-        
+
         if (responseData['status'] != 'success') {
-          throw Exception(responseData['message'] ?? 'Failed to update user profile');
+          throw Exception(
+            responseData['message'] ?? 'Failed to update user profile',
+          );
         }
 
         final user = User.fromJson(responseData['data']);
-        
+
         // Update stored user data
         await _saveUser(user.toJson());
 
@@ -162,79 +166,12 @@ class UserService {
         return user;
       } else {
         final errorData = jsonDecode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to update user profile');
+        throw Exception(
+          errorData['message'] ?? 'Failed to update user profile',
+        );
       }
     } catch (e) {
       developer.log('❌ Update user profile error: $e');
-      rethrow;
-    }
-  }
-
-  // Get user settings
-  Future<UserSettings> getUserSettings() async {
-    try {
-      developer.log('🔄 Fetching user settings');
-
-      final response = await _makeAuthenticatedRequest('/users/settings', 'GET');
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> responseData = jsonDecode(response.body);
-        
-        if (responseData['status'] != 'success') {
-          throw Exception(responseData['message'] ?? 'Failed to fetch user settings');
-        }
-
-        final settings = UserSettings.fromJson(responseData['data']['settings']);
-        developer.log('✅ User settings fetched successfully');
-        return settings;
-      } else {
-        final errorData = jsonDecode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to fetch user settings');
-      }
-    } catch (e) {
-      developer.log('❌ Get user settings error: $e');
-      rethrow;
-    }
-  }
-
-  // Update user settings
-  Future<UserSettings> updateUserSettings({
-    String? currency,
-    String? language,
-    bool? notifications,
-    String? theme,
-  }) async {
-    try {
-      developer.log('🔄 Updating user settings');
-
-      final Map<String, dynamic> body = {};
-      if (currency != null) body['currency'] = currency;
-      if (language != null) body['language'] = language;
-      if (notifications != null) body['notifications'] = notifications;
-      if (theme != null) body['theme'] = theme;
-
-      final response = await _makeAuthenticatedRequest(
-        '/users/settings',
-        'PUT',
-        body: body,
-      );
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> responseData = jsonDecode(response.body);
-        
-        if (responseData['status'] != 'success') {
-          throw Exception(responseData['message'] ?? 'Failed to update user settings');
-        }
-
-        final settings = UserSettings.fromJson(responseData['data']['settings']);
-        developer.log('✅ User settings updated successfully');
-        return settings;
-      } else {
-        final errorData = jsonDecode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to update user settings');
-      }
-    } catch (e) {
-      developer.log('❌ Update user settings error: $e');
       rethrow;
     }
   }
@@ -264,9 +201,11 @@ class UserService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
-        
+
         if (responseData['status'] != 'success') {
-          throw Exception(responseData['message'] ?? 'Failed to change password');
+          throw Exception(
+            responseData['message'] ?? 'Failed to change password',
+          );
         }
 
         developer.log('✅ Password changed successfully');
@@ -314,9 +253,7 @@ class User {
 
     // Parse settings if available
     if (json['settings'] != null) {
-      return user.copyWith(
-        settings: UserSettings.fromJson(json['settings']),
-      );
+      return user.copyWith(settings: UserSettings.fromJson(json['settings']));
     }
 
     return user;
