@@ -42,4 +42,20 @@ class ApiConfig {
   static const String reportsCategories = '/reports/categories';
   static const String reportsCharts = '/reports/charts';
   static const String reportsCategoryDetails = '/reports/category-details';
+
+  // Budget endpoints
+  static const String budgets = '/budgets';
+  static const String budgetAlerts = '/budgets/alerts';
+
+  // Goals endpoints
+  static const String goals = '/goals';
+
+  // Analytics endpoints
+  static const String analyticsTrends = '/analytics/trends';
+  static const String analyticsForecast = '/analytics/forecast';
+  static const String analyticsTopCategories = '/analytics/top-categories';
+  static const String analyticsHealthScore = '/analytics/health-score';
+
+  // Search endpoint
+  static const String transactionsSearch = '/transactions/search';
 }
