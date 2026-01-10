@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../services/api_wrapper.dart';
 import '../services/dashboard_service.dart';
 import '../services/user_service.dart';
+import 'search_page.dart';
+import 'analytics_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -14,10 +16,10 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   final ApiWrapper _api = ApiWrapper();
-  
+
   bool _isLoading = true;
   String? _error;
-  
+
   User? _user;
   DashboardSummary? _summary;
   List<ChartDataPoint> _chartData = [];
@@ -31,7 +33,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Future<void> _loadDashboardData() async {
     if (!mounted) return;
-    
+
     setState(() {
       _isLoading = true;
       _error = null;
@@ -57,12 +59,12 @@ class _DashboardPageState extends State<DashboardPage> {
       });
     } catch (e) {
       if (!mounted) return;
-      
+
       setState(() {
         _error = e.toString();
         _isLoading = false;
       });
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Gagal memuat data dashboard: ${e.toString()}'),
@@ -79,9 +81,7 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (_error != null) {
@@ -152,12 +152,17 @@ class _DashboardPageState extends State<DashboardPage> {
                     child: CircleAvatar(
                       radius: 30,
                       backgroundColor: Colors.white,
-                      backgroundImage: _user?.avatar != null && _user!.avatar.isNotEmpty
+                      backgroundImage:
+                          _user?.avatar != null && _user!.avatar.isNotEmpty
                           ? NetworkImage(_user!.avatar)
                           : null,
                       child: _user?.avatar != null && _user!.avatar.isNotEmpty
                           ? null
-                          : const Icon(Icons.person, size: 30, color: Colors.grey),
+                          : const Icon(
+                              Icons.person,
+                              size: 30,
+                              color: Colors.grey,
+                            ),
                     ),
                   ),
                 ],
@@ -233,188 +238,199 @@ class _DashboardPageState extends State<DashboardPage> {
                       child: _chartData.isEmpty
                           ? const Center(child: Text('Belum ada data grafik'))
                           : LineChart(
-                        LineChartData(
-                          gridData: FlGridData(
-                            show: true,
-                            drawVerticalLine: true,
-                            horizontalInterval: 100000, // Should probably be dynamic
-                            verticalInterval: 1,
-                            getDrawingHorizontalLine: (value) => FlLine(
-                              color: Colors.grey[300],
-                              strokeWidth: 1,
-                            ),
-                            getDrawingVerticalLine: (value) => FlLine(
-                              color: Colors.grey[300],
-                              strokeWidth: 1,
-                            ),
-                          ),
-                          titlesData: FlTitlesData(
-                            show: true,
-                            rightTitles: const AxisTitles(
-                              sideTitles: SideTitles(showTitles: false),
-                            ),
-                            topTitles: const AxisTitles(
-                              sideTitles: SideTitles(showTitles: false),
-                            ),
-                            bottomTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                reservedSize: 30,
-                                interval: 1,
-                                getTitlesWidget: (value, meta) {
-                                  final index = value.toInt();
-                                  if (index >= 0 && index < _chartData.length) {
-                                    return SideTitleWidget(
-                                      axisSide: meta.axisSide,
-                                      space: 8.0,
-                                      child: Text(
-                                        _chartData[index].dayName,
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          color: Colors.grey[600],
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                  return const Text('');
-                                },
-                              ),
-                            ),
-                            leftTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                reservedSize: 42,
-                                // Simplified interval logic
-                                interval: _getMaxAmount() > 0 ? _getMaxAmount() / 4 : 100000,
-                                getTitlesWidget: (value, meta) {
-                                  if (value == 0) return const Text('');
-                                  return SideTitleWidget(
-                                    axisSide: meta.axisSide,
-                                    space: 8.0,
-                                    child: Text(
-                                      '${(value / 1000).toInt()}K',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: Colors.grey[600],
+                              LineChartData(
+                                gridData: FlGridData(
+                                  show: true,
+                                  drawVerticalLine: true,
+                                  horizontalInterval:
+                                      100000, // Should probably be dynamic
+                                  verticalInterval: 1,
+                                  getDrawingHorizontalLine: (value) => FlLine(
+                                    color: Colors.grey[300],
+                                    strokeWidth: 1,
+                                  ),
+                                  getDrawingVerticalLine: (value) => FlLine(
+                                    color: Colors.grey[300],
+                                    strokeWidth: 1,
+                                  ),
+                                ),
+                                titlesData: FlTitlesData(
+                                  show: true,
+                                  rightTitles: const AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false),
+                                  ),
+                                  topTitles: const AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false),
+                                  ),
+                                  bottomTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      reservedSize: 30,
+                                      interval: 1,
+                                      getTitlesWidget: (value, meta) {
+                                        final index = value.toInt();
+                                        if (index >= 0 &&
+                                            index < _chartData.length) {
+                                          return SideTitleWidget(
+                                            axisSide: meta.axisSide,
+                                            space: 8.0,
+                                            child: Text(
+                                              _chartData[index].dayName,
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: Colors.grey[600],
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                        return const Text('');
+                                      },
+                                    ),
+                                  ),
+                                  leftTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      reservedSize: 42,
+                                      // Simplified interval logic
+                                      interval: _getMaxAmount() > 0
+                                          ? _getMaxAmount() / 4
+                                          : 100000,
+                                      getTitlesWidget: (value, meta) {
+                                        if (value == 0) return const Text('');
+                                        return SideTitleWidget(
+                                          axisSide: meta.axisSide,
+                                          space: 8.0,
+                                          child: Text(
+                                            '${(value / 1000).toInt()}K',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                                borderData: FlBorderData(
+                                  show: true,
+                                  border: Border.all(color: Colors.grey[300]!),
+                                ),
+                                minX: 0,
+                                maxX: (_chartData.length - 1).toDouble(),
+                                minY: 0,
+                                lineTouchData: LineTouchData(
+                                  touchTooltipData: LineTouchTooltipData(
+                                    fitInsideHorizontally: true,
+                                    tooltipRoundedRadius: 8,
+                                    getTooltipItems: (touchedSpots) {
+                                      return touchedSpots.map((spot) {
+                                        final index = spot.x.toInt();
+                                        if (index >= 0 &&
+                                            index < _chartData.length) {
+                                          final data = _chartData[index];
+                                          final isIncome = spot.barIndex == 1;
+                                          final amount = isIncome
+                                              ? data.income
+                                              : data.expense;
+                                          final label = isIncome
+                                              ? 'Pemasukan'
+                                              : 'Pengeluaran';
+
+                                          return LineTooltipItem(
+                                            '$label\nRp ${NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 0).format(amount)}',
+                                            const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          );
+                                        }
+                                        return null;
+                                      }).toList();
+                                    },
+                                  ),
+                                  handleBuiltInTouches: true,
+                                ),
+                                lineBarsData: [
+                                  // Expense Line
+                                  LineChartBarData(
+                                    spots: _chartData.asMap().entries.map((
+                                      entry,
+                                    ) {
+                                      return FlSpot(
+                                        entry.key.toDouble(),
+                                        entry.value.expense,
+                                      );
+                                    }).toList(),
+                                    isCurved: true,
+                                    color: Colors.red[600],
+                                    barWidth: 3,
+                                    isStrokeCapRound: true,
+                                    dotData: FlDotData(
+                                      show: true,
+                                      getDotPainter:
+                                          (spot, percent, barData, index) {
+                                            return FlDotCirclePainter(
+                                              radius: 4,
+                                              color: Colors.red[600]!,
+                                              strokeWidth: 2,
+                                              strokeColor: Colors.white,
+                                            );
+                                          },
+                                    ),
+                                    belowBarData: BarAreaData(
+                                      show: true,
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          Colors.red[100]!.withAlpha(50),
+                                          Colors.red[100]!.withAlpha(10),
+                                        ],
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
                                       ),
                                     ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
-                          borderData: FlBorderData(
-                            show: true,
-                            border: Border.all(color: Colors.grey[300]!),
-                          ),
-                          minX: 0,
-                          maxX: (_chartData.length - 1).toDouble(),
-                          minY: 0,
-                          lineTouchData: LineTouchData(
-                            touchTooltipData: LineTouchTooltipData(
-                              fitInsideHorizontally: true,
-                              tooltipRoundedRadius: 8,
-                              getTooltipItems: (touchedSpots) {
-                                return touchedSpots.map((spot) {
-                                  final index = spot.x.toInt();
-                                  if (index >= 0 && index < _chartData.length) {
-                                    final data = _chartData[index];
-                                    final isIncome = spot.barIndex == 1;
-                                    final amount = isIncome
-                                        ? data.income
-                                        : data.expense;
-                                    final label = isIncome
-                                        ? 'Pemasukan'
-                                        : 'Pengeluaran';
-
-                                    return LineTooltipItem(
-                                      '$label\nRp ${NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 0).format(amount)}',
-                                      const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
+                                  ),
+                                  // Income Line
+                                  LineChartBarData(
+                                    spots: _chartData.asMap().entries.map((
+                                      entry,
+                                    ) {
+                                      return FlSpot(
+                                        entry.key.toDouble(),
+                                        entry.value.income,
+                                      );
+                                    }).toList(),
+                                    isCurved: true,
+                                    color: Colors.green[600],
+                                    barWidth: 3,
+                                    isStrokeCapRound: true,
+                                    dotData: FlDotData(
+                                      show: true,
+                                      getDotPainter:
+                                          (spot, percent, barData, index) {
+                                            return FlDotCirclePainter(
+                                              radius: 4,
+                                              color: Colors.green[600]!,
+                                              strokeWidth: 2,
+                                              strokeColor: Colors.white,
+                                            );
+                                          },
+                                    ),
+                                    belowBarData: BarAreaData(
+                                      show: true,
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          Colors.green[100]!.withAlpha(50),
+                                          Colors.green[100]!.withAlpha(10),
+                                        ],
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
                                       ),
-                                    );
-                                  }
-                                  return null;
-                                }).toList();
-                              },
-                            ),
-                            handleBuiltInTouches: true,
-                          ),
-                          lineBarsData: [
-                            // Expense Line
-                            LineChartBarData(
-                              spots: _chartData.asMap().entries.map((entry) {
-                                return FlSpot(
-                                  entry.key.toDouble(),
-                                  entry.value.expense,
-                                );
-                              }).toList(),
-                              isCurved: true,
-                              color: Colors.red[600],
-                              barWidth: 3,
-                              isStrokeCapRound: true,
-                              dotData: FlDotData(
-                                show: true,
-                                getDotPainter: (spot, percent, barData, index) {
-                                  return FlDotCirclePainter(
-                                    radius: 4,
-                                    color: Colors.red[600]!,
-                                    strokeWidth: 2,
-                                    strokeColor: Colors.white,
-                                  );
-                                },
-                              ),
-                              belowBarData: BarAreaData(
-                                show: true,
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Colors.red[100]!.withAlpha(50),
-                                    Colors.red[100]!.withAlpha(10),
-                                  ],
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            // Income Line
-                            LineChartBarData(
-                              spots: _chartData.asMap().entries.map((entry) {
-                                return FlSpot(
-                                  entry.key.toDouble(),
-                                  entry.value.income,
-                                );
-                              }).toList(),
-                              isCurved: true,
-                              color: Colors.green[600],
-                              barWidth: 3,
-                              isStrokeCapRound: true,
-                              dotData: FlDotData(
-                                show: true,
-                                getDotPainter: (spot, percent, barData, index) {
-                                  return FlDotCirclePainter(
-                                    radius: 4,
-                                    color: Colors.green[600]!,
-                                    strokeWidth: 2,
-                                    strokeColor: Colors.white,
-                                  );
-                                },
-                              ),
-                              belowBarData: BarAreaData(
-                                show: true,
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Colors.green[100]!.withAlpha(50),
-                                    Colors.green[100]!.withAlpha(10),
-                                  ],
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                     ),
                   ],
                 ),
@@ -444,6 +460,36 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
         ),
       ),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Analytics FAB
+          FloatingActionButton.small(
+            heroTag: 'dashboard_analytics',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AnalyticsPage()),
+              );
+            },
+            backgroundColor: Colors.green[600],
+            child: const Icon(Icons.analytics_outlined, color: Colors.white),
+          ),
+          const SizedBox(height: 12),
+          // Search FAB
+          FloatingActionButton.small(
+            heroTag: 'dashboard_search',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SearchPage()),
+              );
+            },
+            backgroundColor: Colors.orange[600],
+            child: const Icon(Icons.search, color: Colors.white),
+          ),
+        ],
+      ),
     );
   }
 
@@ -456,7 +502,12 @@ class _DashboardPageState extends State<DashboardPage> {
     return max == 0 ? 100000 : max;
   }
 
-  Widget _buildSummaryCard(String title, double amount, IconData icon, Color color) {
+  Widget _buildSummaryCard(
+    String title,
+    double amount,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -467,19 +518,9 @@ class _DashboardPageState extends State<DashboardPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon,
-            color: color,
-            size: 24,
-          ),
+          Icon(icon, color: color, size: 24),
           const SizedBox(height: 8),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 14,
-              color: color,
-            ),
-          ),
+          Text(title, style: TextStyle(fontSize: 14, color: color)),
           const SizedBox(height: 4),
           Text(
             'Rp ${NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 0).format(amount)}',
@@ -496,10 +537,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildChartLegend(String label, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 8,
-        vertical: 4,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color.withAlpha(30),
         borderRadius: BorderRadius.circular(4),
@@ -516,10 +554,7 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
           ),
           const SizedBox(width: 4),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 12),
-          ),
+          Text(label, style: const TextStyle(fontSize: 12)),
         ],
       ),
     );
@@ -528,7 +563,9 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget _buildTransactionItem(Transaction transaction) {
     final isExpense = transaction.type == 'expense';
     final color = isExpense ? Colors.red : Colors.green;
-    final icon = isExpense ? Icons.arrow_downward : Icons.arrow_upward; // Simplified icon logic
+    final icon = isExpense
+        ? Icons.arrow_downward
+        : Icons.arrow_upward; // Simplified icon logic
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -561,7 +598,9 @@ class _DashboardPageState extends State<DashboardPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  transaction.description.isNotEmpty ? transaction.description : transaction.category,
+                  transaction.description.isNotEmpty
+                      ? transaction.description
+                      : transaction.category,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
@@ -569,7 +608,9 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  DateFormat('dd MMM yyyy').format(DateTime.parse(transaction.date)),
+                  DateFormat(
+                    'dd MMM yyyy',
+                  ).format(DateTime.parse(transaction.date)),
                   style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                 ),
               ],

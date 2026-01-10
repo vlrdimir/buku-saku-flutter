@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../services/api_wrapper.dart';
 import '../services/reports_service.dart';
 import 'category_details_page.dart';
+import 'search_page.dart';
+import 'analytics_page.dart';
 
 class ReportsPage extends StatefulWidget {
   const ReportsPage({super.key});
@@ -14,10 +16,10 @@ class ReportsPage extends StatefulWidget {
 
 class _ReportsPageState extends State<ReportsPage> {
   final ApiWrapper _api = ApiWrapper();
-  
+
   String _selectedPeriod = 'Bulan ini';
   int? _touchedIndex;
-  
+
   bool _isLoading = false;
   ReportsSummary? _summary;
   CategoryBreakdown? _breakdown;
@@ -49,7 +51,7 @@ class _ReportsPageState extends State<ReportsPage> {
 
     try {
       final apiPeriod = _periodMapping[_selectedPeriod] ?? 'month';
-      
+
       final results = await Future.wait([
         _api.getReportsSummary(period: apiPeriod),
         _api.getCategoryBreakdown(period: apiPeriod, type: 'all'),
@@ -79,9 +81,7 @@ class _ReportsPageState extends State<ReportsPage> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
@@ -203,20 +203,24 @@ class _ReportsPageState extends State<ReportsPage> {
                                 sectionsSpace: 2,
                                 centerSpaceRadius: 60,
                                 pieTouchData: PieTouchData(
-                                  touchCallback: (FlTouchEvent event, pieTouchResponse) {
-                                    if (!event.isInterestedForInteractions ||
-                                        pieTouchResponse == null ||
-                                        pieTouchResponse.touchedSection == null) {
-                                      setState(() {
-                                        _touchedIndex = null;
-                                      });
-                                      return;
-                                    }
-                                    setState(() {
-                                      _touchedIndex = pieTouchResponse
-                                          .touchedSection!.touchedSectionIndex;
-                                    });
-                                  },
+                                  touchCallback:
+                                      (FlTouchEvent event, pieTouchResponse) {
+                                        if (!event
+                                                .isInterestedForInteractions ||
+                                            pieTouchResponse == null ||
+                                            pieTouchResponse.touchedSection ==
+                                                null) {
+                                          setState(() {
+                                            _touchedIndex = null;
+                                          });
+                                          return;
+                                        }
+                                        setState(() {
+                                          _touchedIndex = pieTouchResponse
+                                              .touchedSection!
+                                              .touchedSectionIndex;
+                                        });
+                                      },
                                 ),
                                 sections: _generatePieChartSections(),
                               ),
@@ -253,6 +257,36 @@ class _ReportsPageState extends State<ReportsPage> {
           ),
         ),
       ),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Analytics FAB
+          FloatingActionButton.small(
+            heroTag: 'reports_analytics',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AnalyticsPage()),
+              );
+            },
+            backgroundColor: Colors.green[600],
+            child: const Icon(Icons.analytics_outlined, color: Colors.white),
+          ),
+          const SizedBox(height: 12),
+          // Search FAB
+          FloatingActionButton.small(
+            heroTag: 'reports_search',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SearchPage()),
+              );
+            },
+            backgroundColor: Colors.orange[600],
+            child: const Icon(Icons.search, color: Colors.white),
+          ),
+        ],
+      ),
     );
   }
 
@@ -280,11 +314,11 @@ class _ReportsPageState extends State<ReportsPage> {
           fontWeight: FontWeight.bold,
           color: Colors.white,
         ),
-        badgeWidget: _touchedIndex == i 
+        badgeWidget: _touchedIndex == i
             ? _Badge(
-                category.name, 
+                category.name,
                 'Rp ${NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 0).format(category.amount)}',
-                color
+                color,
               )
             : null,
         badgePositionPercentageOffset: .98,
@@ -330,7 +364,9 @@ class _ReportsPageState extends State<ReportsPage> {
                   title,
                   style: TextStyle(
                     fontSize: 14,
-                    color: color.withAlpha(180), // Fix: use consistent alpha logic or just color
+                    color: color.withAlpha(
+                      180,
+                    ), // Fix: use consistent alpha logic or just color
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -371,10 +407,8 @@ class _ReportsPageState extends State<ReportsPage> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => CategoryDetailsPage(
-              categoryName: category.name,
-              type: 'all',
-            ),
+            builder: (context) =>
+                CategoryDetailsPage(categoryName: category.name, type: 'all'),
           ),
         );
       },

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/api_wrapper.dart';
+import 'search_page.dart';
+import 'analytics_page.dart';
 
 class TransactionPage extends StatefulWidget {
   const TransactionPage({super.key});
@@ -307,6 +309,36 @@ class _TransactionPageState extends State<TransactionPage> {
               ),
           ],
         ),
+      ),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Analytics FAB
+          FloatingActionButton.small(
+            heroTag: 'transaction_analytics',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AnalyticsPage()),
+              );
+            },
+            backgroundColor: Colors.green[600],
+            child: const Icon(Icons.analytics_outlined, color: Colors.white),
+          ),
+          const SizedBox(height: 12),
+          // Search FAB
+          FloatingActionButton.small(
+            heroTag: 'transaction_search',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SearchPage()),
+              );
+            },
+            backgroundColor: Colors.orange[600],
+            child: const Icon(Icons.search, color: Colors.white),
+          ),
+        ],
       ),
     );
   }
