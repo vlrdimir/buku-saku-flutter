@@ -342,6 +342,57 @@ class TransactionService {
       rethrow;
     }
   }
+
+  // Search transactions with filters
+  Future<List<Transaction>> searchTransactions({
+    required String query,
+    double? minAmount,
+    double? maxAmount,
+    String? category,
+    String? type,
+  }) async {
+    try {
+      developer.log('🔄 Searching transactions: q=$query');
+
+      final Map<String, String> queryParams = {'q': query};
+      if (minAmount != null) queryParams['min_amount'] = minAmount.toString();
+      if (maxAmount != null) queryParams['max_amount'] = maxAmount.toString();
+      if (category != null) queryParams['category'] = category;
+      if (type != null) queryParams['type'] = type;
+
+      final response = await _makeAuthenticatedRequest(
+        '/transactions/search',
+        'GET',
+        queryParams: queryParams,
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+
+        if (responseData['status'] != 'success') {
+          throw Exception(
+            responseData['message'] ?? 'Failed to search transactions',
+          );
+        }
+
+        final List<Transaction> results =
+            (responseData['data']['results'] as List)
+                .map((item) => Transaction.fromJson(item))
+                .toList();
+
+        developer.log('✅ Search returned ${results.length} results');
+        return results;
+      } else {
+        final errorData = jsonDecode(response.body);
+        throw Exception(
+          errorData['message'] ?? 'Failed to search transactions',
+        );
+      }
+    } catch (e) {
+      developer.log('❌ Search transactions error: $e');
+      rethrow;
+    }
+  }
 }
 
 // Data Models

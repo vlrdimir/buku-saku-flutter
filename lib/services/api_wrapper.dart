@@ -4,6 +4,9 @@ import '../services/dashboard_service.dart' as dashboard;
 import '../services/transaction_service.dart' as transaction;
 import '../services/reports_service.dart' as reports;
 import '../services/user_service.dart' as user;
+import '../services/budget_service.dart' as budget;
+import '../services/goal_service.dart' as goal;
+import '../services/analytics_service.dart' as analytics;
 
 class ApiWrapper {
   static final ApiWrapper _instance = ApiWrapper._internal();
@@ -18,6 +21,10 @@ class ApiWrapper {
       transaction.TransactionService();
   final reports.ReportsService _reportsService = reports.ReportsService();
   final user.UserService _userService = user.UserService();
+  final budget.BudgetService _budgetService = budget.BudgetService();
+  final goal.GoalService _goalService = goal.GoalService();
+  final analytics.AnalyticsService _analyticsService =
+      analytics.AnalyticsService();
 
   // Authentication
   Future<auth.AuthResult> login(String email, String password) async {
@@ -221,6 +228,204 @@ class ApiWrapper {
     } catch (e) {
       developer.log('❌ API Wrapper: Update profile error: $e');
       return false;
+    }
+  }
+
+  // ==================== BUDGET METHODS ====================
+
+  Future<budget.Budget> createBudget({
+    required String category,
+    required double amount,
+    required String period,
+    required String startDate,
+  }) async {
+    developer.log('🔐 API Wrapper: Creating budget');
+    return await _budgetService.createBudget(
+      category: category,
+      amount: amount,
+      period: period,
+      startDate: startDate,
+    );
+  }
+
+  Future<List<budget.Budget>> getBudgets() async {
+    developer.log('🔐 API Wrapper: Getting budgets');
+    try {
+      return await _budgetService.getBudgets();
+    } catch (e) {
+      developer.log('❌ API Wrapper: Get budgets error: $e');
+      return [];
+    }
+  }
+
+  Future<budget.Budget> updateBudget({
+    required String id,
+    double? amount,
+    String? category,
+    String? period,
+    String? startDate,
+  }) async {
+    developer.log('🔐 API Wrapper: Updating budget: $id');
+    return await _budgetService.updateBudget(
+      id: id,
+      amount: amount,
+      category: category,
+      period: period,
+      startDate: startDate,
+    );
+  }
+
+  Future<bool> deleteBudget(String id) async {
+    developer.log('🔐 API Wrapper: Deleting budget: $id');
+    try {
+      await _budgetService.deleteBudget(id);
+      return true;
+    } catch (e) {
+      developer.log('❌ API Wrapper: Delete budget error: $e');
+      return false;
+    }
+  }
+
+  Future<List<budget.BudgetAlert>> getBudgetAlerts() async {
+    developer.log('🔐 API Wrapper: Getting budget alerts');
+    try {
+      return await _budgetService.getBudgetAlerts();
+    } catch (e) {
+      developer.log('❌ API Wrapper: Get budget alerts error: $e');
+      return [];
+    }
+  }
+
+  // ==================== GOAL METHODS ====================
+
+  Future<goal.Goal> createGoal({
+    required String name,
+    required double targetAmount,
+    required String targetDate,
+    double? initialSaving,
+  }) async {
+    developer.log('🔐 API Wrapper: Creating goal');
+    return await _goalService.createGoal(
+      name: name,
+      targetAmount: targetAmount,
+      targetDate: targetDate,
+      initialSaving: initialSaving,
+    );
+  }
+
+  Future<List<goal.Goal>> getGoals() async {
+    developer.log('🔐 API Wrapper: Getting goals');
+    try {
+      return await _goalService.getGoals();
+    } catch (e) {
+      developer.log('❌ API Wrapper: Get goals error: $e');
+      return [];
+    }
+  }
+
+  Future<goal.Goal> updateGoal({
+    required String id,
+    String? name,
+    double? targetAmount,
+    double? currentAmount,
+    String? targetDate,
+  }) async {
+    developer.log('🔐 API Wrapper: Updating goal: $id');
+    return await _goalService.updateGoal(
+      id: id,
+      name: name,
+      targetAmount: targetAmount,
+      currentAmount: currentAmount,
+      targetDate: targetDate,
+    );
+  }
+
+  Future<bool> deleteGoal(String id) async {
+    developer.log('🔐 API Wrapper: Deleting goal: $id');
+    try {
+      await _goalService.deleteGoal(id);
+      return true;
+    } catch (e) {
+      developer.log('❌ API Wrapper: Delete goal error: $e');
+      return false;
+    }
+  }
+
+  Future<goal.GoalProgress?> getGoalProgress(String id) async {
+    developer.log('🔐 API Wrapper: Getting goal progress: $id');
+    try {
+      return await _goalService.getGoalProgress(id);
+    } catch (e) {
+      developer.log('❌ API Wrapper: Get goal progress error: $e');
+      return null;
+    }
+  }
+
+  // ==================== ANALYTICS METHODS ====================
+
+  Future<List<analytics.SpendingTrend>> getSpendingTrends({
+    int months = 6,
+  }) async {
+    developer.log('🔐 API Wrapper: Getting spending trends');
+    try {
+      return await _analyticsService.getSpendingTrends(months: months);
+    } catch (e) {
+      developer.log('❌ API Wrapper: Get spending trends error: $e');
+      return [];
+    }
+  }
+
+  Future<analytics.Forecast?> getForecast() async {
+    developer.log('🔐 API Wrapper: Getting forecast');
+    try {
+      return await _analyticsService.getForecast();
+    } catch (e) {
+      developer.log('❌ API Wrapper: Get forecast error: $e');
+      return null;
+    }
+  }
+
+  Future<List<analytics.TopCategory>> getTopCategories() async {
+    developer.log('🔐 API Wrapper: Getting top categories');
+    try {
+      return await _analyticsService.getTopCategories();
+    } catch (e) {
+      developer.log('❌ API Wrapper: Get top categories error: $e');
+      return [];
+    }
+  }
+
+  Future<analytics.HealthScore?> getHealthScore() async {
+    developer.log('🔐 API Wrapper: Getting health score');
+    try {
+      return await _analyticsService.getHealthScore();
+    } catch (e) {
+      developer.log('❌ API Wrapper: Get health score error: $e');
+      return null;
+    }
+  }
+
+  // ==================== SEARCH METHODS ====================
+
+  Future<List<transaction.Transaction>> searchTransactions({
+    required String query,
+    double? minAmount,
+    double? maxAmount,
+    String? category,
+    String? type,
+  }) async {
+    developer.log('🔐 API Wrapper: Searching transactions');
+    try {
+      return await _transactionService.searchTransactions(
+        query: query,
+        minAmount: minAmount,
+        maxAmount: maxAmount,
+        category: category,
+        type: type,
+      );
+    } catch (e) {
+      developer.log('❌ API Wrapper: Search transactions error: $e');
+      return [];
     }
   }
 }
