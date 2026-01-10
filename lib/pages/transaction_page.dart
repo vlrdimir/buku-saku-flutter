@@ -245,20 +245,20 @@ class _TransactionPageState extends State<TransactionPage> {
                       ),
                     ),
                     onTap: () async {
-                      DateTime? pickedDate = await showDatePicker(
+                      final pickedDate = await showDatePicker(
                         context: context,
                         initialDate: _selectedDate,
                         firstDate: DateTime(2000),
                         lastDate: DateTime(2100),
                       );
-                      if (pickedDate != null) {
-                        setState(() {
-                          _selectedDate = pickedDate;
-                          _dateController.text = DateFormat(
-                            'dd/MM/yyyy',
-                          ).format(pickedDate);
-                        });
-                      }
+                      final picked = pickedDate;
+                      if (!mounted || picked == null) return;
+                      setState(() {
+                        _selectedDate = picked;
+                        _dateController.text = DateFormat(
+                          'dd/MM/yyyy',
+                        ).format(picked);
+                      });
                     },
                   ),
 
@@ -279,16 +279,22 @@ class _TransactionPageState extends State<TransactionPage> {
                         ),
                         elevation: 2,
                       ),
-                      child: _isLoading 
-                        ? const SizedBox(
-                            width: 24, 
-                            height: 24, 
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
-                          )
-                        : const Text(
-                            'Simpan Transaksi',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                          ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text(
+                              'Simpan Transaksi',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                     ),
                   ),
                 ],
@@ -297,9 +303,7 @@ class _TransactionPageState extends State<TransactionPage> {
             if (_isLoading)
               Container(
                 color: Colors.black.withAlpha(30),
-                child: const Center(
-                  child: CircularProgressIndicator(),
-                ),
+                child: const Center(child: CircularProgressIndicator()),
               ),
           ],
         ),
